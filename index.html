@@ -13,8 +13,8 @@ title: Home
 		<div class="DateInfo">
             <span class="post-date">{{ post.date | date: "%B %d, %Y" }}</span>
             <span class="sep">|</span>
-		    <a href="{{ post.url }}#disqus_thread" data-disqus-identifier="{{ post.id }}" class="post-comment">Comment</a>
 		</div>
+		<a href="{{ post.url }}">Read more</a>
 	</article>
 
 {% endfor %}
