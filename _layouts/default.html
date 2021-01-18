@@ -4,25 +4,11 @@
 {% include head.html %}
 
 <body class="layout-reverse">
-<h2>default</h2>
+<h2>layout: Default Page</h2>
 {% include sidebar.html %}
-<h3>Default Page</h3>
 
-<!-- Wrap is the content to shift when toggling the sidebar. We wrap the
-     content to avoid any CSS collisions with our real content. -->
-<div class="wrap">
-    <div class="masthead">
-        <div class="container">
-            <h3 class="masthead-title">
-                <a href="{{ site.baseurl }}/" title="Home">{{ site.title }}</a>
-                <small>{{ site.tagline }}</small>
-            </h3>
-        </div>
-    </div>
-
-    <div class="container content">
-        {{ content }}
-    </div>
+<div class="container content">
+    {{ content }}
 </div>
 
 </body>
