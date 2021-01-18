@@ -3,33 +3,14 @@ layout: default
 title: Home
 ---
 
-{% include head.html %}
-
 <body class="layout-reverse">
 <h2>Index</h2>
-{% include sidebar.html %}
 
 {% for post in paginator.posts %}
 
 	<article class="post">
         <h1 class="post-title">{{ post.title }}</h1>
-		<div class="DateInfo">
-            <span class="post-date">{{ post.date | date: "%B %d, %Y" }}</span>
-            <span class="sep">|</span>
-		    <a href="{{ post.url }}#disqus_thread" data-disqus-identifier="{{ post.id }}" class="post-comment">Comment</a>
-        </div>
-		{% if post.content contains site.excerpt_separator %}
-			<div class="post-content">{{ post.excerpt }}</div>
-			<div class="post-more">
-				<a href="{{ post.url }}">Read more</a>
-			</div>
-		{% else %}
-			<div class="post-content">{{ post.content }}</div>
-		{% endif %}
-
 	</article>
 
 {% endfor %}
 
-</body>
-</html>
