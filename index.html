@@ -9,11 +9,12 @@ title: Home
 
 	<article class="post">
 		<h1 class="post-title">{{ post.title }}</h1>
+		<a href="{{ post.url }}">Read more</a>
 		<div class="DateInfo">
             <span class="post-date">{{ post.date | date: "%B %d, %Y" }}</span>
             <span class="sep">|</span>
 		</div>
-		<a href="{{ post.url }}">Read more</a>
+		
 	</article>
 
 {% endfor %}
