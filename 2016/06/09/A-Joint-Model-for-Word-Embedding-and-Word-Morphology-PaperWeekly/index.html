@@ -1,0 +1,308 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>A Joint Model for Word Embedding and Word Morphology #PaperWeekly# | PaperWeekly</title>
+  
+  
+  <meta name="description" content="大家端午节快乐！本文将分享一篇关于词向量模型最新研究的文章，文章于6月8号提交到arxiv上，题目是A Joint Model for Word Embedding and Word Morphology，作者是来自剑桥大学的博士生Kris Cao。
+本文最大的贡献在于第一次将词形联合词向量一同进行">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="A Joint Model for Word Embedding and Word Morphology #PaperWeekly#"/>
+  <meta property="og:site_name" content="PaperWeekly"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="PaperWeekly" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+<script>
+	(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+		(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+			m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+	})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+	ga('create', 'UA-77933764-1', 'auto');
+	ga('send', 'pageview');
+
+</script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+
+</head>
+
+
+<body>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">PaperWeekly</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+      <li><a href="/atom.xml">Rss</a></li>
+    
+      <li><a href="/about/index.html">About</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2016-06-09T06:34:03.000Z"><a href="/2016/06/09/A-Joint-Model-for-Word-Embedding-and-Word-Morphology-PaperWeekly/">2016-06-09</a></time>
+      
+      
+  
+    <h1 class="title">A Joint Model for Word Embedding and Word Morphology #PaperWeekly#</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>大家端午节快乐！本文将分享一篇关于词向量模型最新研究的文章，文章于6月8号提交到arxiv上，题目是<a href="http://cn.arxiv.org/pdf/1606.02601v1.pdf" target="_blank" rel="external">A Joint Model for Word Embedding and Word Morphology</a>，作者是来自剑桥大学的博士生<a href="https://www.cl.cam.ac.uk/~kc391/" target="_blank" rel="external">Kris Cao</a>。</p>
+<p>本文最大的贡献在于第一次将词形联合词向量一同进行训练，从某种程度上解决了未登录词（OOV）的词向量表示问题，同时也得到了一个效果不错的词形分析器。</p>
+<p>介绍本文模型之前先简单介绍下本文中采用的词向量训练方法，skip-gram with negative sampling（SGNS）。这个方法是word2vec中的一种方法，大概的思路是可参见下图：</p>
+<img src="/2016/06/09/A-Joint-Model-for-Word-Embedding-and-Word-Morphology-PaperWeekly/fig3.png" width="600" height="600">
+<p>通过用dog这个词来预测其上下文，比如cute、fluffy、barked、loudly，为了更快地收敛，增加负样本，即图中的bicycle和Episcopal这两个与dog无关的词。skip-gram的思路就是通过word来预测上下文context，而negative sampling则是根据当前词构造出一些与之无关的词，作为负样本加速收敛。</p>
+<p>接下来介绍本文的模型Char2Vec，将字符作为最小的单元进行研究，因为对于字符这个层次来说，并不会出现OOV词的情况。具体看下图：</p>
+<img src="/2016/06/09/A-Joint-Model-for-Word-Embedding-and-Word-Morphology-PaperWeekly/fig1.png" width="600" height="600">
+<p>在每个单词的首和尾分别添加符号^和$作为标记，将词看作是一个字符序列。在这个序列上用一个正向LSTM和一个反向LSTM得到两组hidden state，每个位置上的字符都对应着两个hidden state，将其拼接起来，然后用一个单层前馈神经网络进行处理，得到该位置上的hidden state，记为h(i)。有了每个字符的表示，接下来用attention机制来构造出词的表示，即学习一个权重系数，来表明这个词的语义与哪个h(i)关系更大，一般来说词干所在的h(i)权重会大一些，词前缀或者后缀并不能表示语义，所以权重会小很多。见下图：</p>
+<img src="/2016/06/09/A-Joint-Model-for-Word-Embedding-and-Word-Morphology-PaperWeekly/fig2.png" width="600" height="600">
+<p>图中的单词malice、hatred、greed会与序列中的词干spit、spite，前缀^、后缀ful关系就会紧密一些，而与其他错误的字符串关系不大。</p>
+<p>通过attention model我们得到了词向量f(w)。剩下的过程就是用skip-gram with negative sampling来训练词向量了。先前的工作都是用lstm处理字符序列来表示整个单词向量，本文并没有这样做，而是将直接使用attention model来获取每个h(i)中的信息，包括一个正向的lstm和反向的lstm，正向的lstm包含了词干和词前缀，反向的lstm包含了词后缀。当我们处理未知的词时，可以将这个词分解为已知的部分和未知的部分，这个模型就可以通过已知的部分来预测整个词的词向量，因此解决了OOV的问题。</p>
+<p>实验中测试了该模型的词形分析的能力，尤其是在单词词形很丰富（包括词干、前缀、后缀）的情况下，效果优于一些成熟的分词器。看下图：</p>
+<img src="/2016/06/09/A-Joint-Model-for-Word-Embedding-and-Word-Morphology-PaperWeekly/fig4.png" width="300" height="300">
+<p>在词向量效果测试中，本文模型在semantic测试中表现很差，但在syntactic测试中表现非常好。看下图：</p>
+<img src="/2016/06/09/A-Joint-Model-for-Word-Embedding-and-Word-Morphology-PaperWeekly/fig5.png" width="300" height="300">
+<p>看得出来本文模型的优势非常明显，优势在于解决了大量处于长尾尾端的合成词的词向量表示问题，通过用未知词的已知部分（词干）来预测该词的词向量，从而解决了word2vec等一系列前人工作中未解决的问题，在英语语境中效果可能没那么好，如果换作是德语或者土耳其语这种词形非常丰富的语言会有更好的效果。在整个任务评测中，可以更好地解决syntactic相似问题，因为引入了词形这个feature可以很好地解决syntactic任务；而在semantic任务中却表现非常差，原因是char-level的词向量模型在捕捉语义上效果本身就不如word-level的模型。可以说，本文在传统词向量模型的基础上考虑加入feature来提升性能，是一种非常积极的尝试，虽然并没有在方方面面上都得到改善，但毕竟是一个探索性的、且非常有意义的工作，值得学习。</p>
+<p><b>工具推荐</b></p>
+<p><code>RSarXiv</code> <b>一个好用的arxiv cs paper推荐系统</b> <a href="http://rsarxiv.science/web" target="_blank" rel="external">网站地址</a> <b>ios App下载：App Store 搜索rsarxiv即可获得 </b></p>
+<p>PaperWeekly，每周会分享N篇nlp领域好玩的paper，旨在用最少的话说明白paper的贡献。</p>
+<img src="/2016/05/13/Paper翻译列表/qrcode.jpg" width="350" height="350">
+
+      
+    </div>
+    <footer>
+      
+        
+        
+  
+  <div class="tags">
+    <a href="/tags/nlp/">nlp</a>, <a href="/tags/PaperWeekly/">PaperWeekly</a>, <a href="/tags/word-embedding/">word embedding</a>
+  </div>
+
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+      <a class="addthis_button_pinterest_pinit" pi:pinit:layout="horizontal"></a>
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">留言</h1>
+
+  
+      <div id="fb-root"></div>
+<script>
+  (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=123456789012345";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
+</script>
+
+<div class="fb-comments" data-href="http://rsarxiv.github.io/2016/06/09/A-Joint-Model-for-Word-Embedding-and-Word-Morphology-PaperWeekly/index.html" data-num-posts="5" data-width="840" data-colorscheme="light"></div>
+      
+  
+</section>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜索">
+    <input type="hidden" name="q" value="site:rsarxiv.github.io">
+  </form>
+</div>
+
+  
+
+  
+<div class="widget tag">
+  <h3 class="title">标签</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/Autoencoder/">Autoencoder</a><small>1</small></li>
+  
+    <li><a href="/tags/CNN/">CNN</a><small>2</small></li>
+  
+    <li><a href="/tags/DQN/">DQN</a><small>4</small></li>
+  
+    <li><a href="/tags/Memory-Network/">Memory Network</a><small>1</small></li>
+  
+    <li><a href="/tags/NLP/">NLP</a><small>2</small></li>
+  
+    <li><a href="/tags/PaperWeekly/">PaperWeekly</a><small>110</small></li>
+  
+    <li><a href="/tags/RNN/">RNN</a><small>1</small></li>
+  
+    <li><a href="/tags/RNNLM/">RNNLM</a><small>1</small></li>
+  
+    <li><a href="/tags/ROUGE/">ROUGE</a><small>1</small></li>
+  
+    <li><a href="/tags/RSarXiv/">RSarXiv</a><small>1</small></li>
+  
+    <li><a href="/tags/Reading-Comprehension/">Reading Comprehension</a><small>6</small></li>
+  
+    <li><a href="/tags/Representation/">Representation</a><small>1</small></li>
+  
+    <li><a href="/tags/Text-Comprehension/">Text Comprehension</a><small>1</small></li>
+  
+    <li><a href="/tags/api-ai/">api.ai</a><small>1</small></li>
+  
+    <li><a href="/tags/arXiv/">arXiv</a><small>2</small></li>
+  
+    <li><a href="/tags/arxiv/">arxiv</a><small>2</small></li>
+  
+    <li><a href="/tags/attention/">attention</a><small>3</small></li>
+  
+    <li><a href="/tags/bot/">bot</a><small>21</small></li>
+  
+    <li><a href="/tags/chatbot/">chatbot</a><small>2</small></li>
+  
+    <li><a href="/tags/dataset/">dataset</a><small>1</small></li>
+  
+    <li><a href="/tags/deep-learning/">deep learning</a><small>1</small></li>
+  
+    <li><a href="/tags/deeplearning/">deeplearning</a><small>1</small></li>
+  
+    <li><a href="/tags/language-model/">language model</a><small>1</small></li>
+  
+    <li><a href="/tags/nlp/">nlp</a><small>128</small></li>
+  
+    <li><a href="/tags/open-source/">open source</a><small>1</small></li>
+  
+    <li><a href="/tags/paper/">paper</a><small>7</small></li>
+  
+    <li><a href="/tags/paperweekly/">paperweekly</a><small>2</small></li>
+  
+    <li><a href="/tags/reading-comprehension/">reading comprehension</a><small>1</small></li>
+  
+    <li><a href="/tags/reinforcement-learning/">reinforcement learning</a><small>1</small></li>
+  
+    <li><a href="/tags/sentence-representations/">sentence representations</a><small>1</small></li>
+  
+    <li><a href="/tags/seq2seq/">seq2seq</a><small>17</small></li>
+  
+    <li><a href="/tags/text-comprehension/">text comprehension</a><small>1</small></li>
+  
+    <li><a href="/tags/torch/">torch</a><small>1</small></li>
+  
+    <li><a href="/tags/word-embedding/">word embedding</a><small>2</small></li>
+  
+    <li><a href="/tags/word-embeddings/">word embeddings</a><small>1</small></li>
+  
+    <li><a href="/tags/word2vec/">word2vec</a><small>1</small></li>
+  
+    <li><a href="/tags/创业/">创业</a><small>1</small></li>
+  
+    <li><a href="/tags/招聘/">招聘</a><small>1</small></li>
+  
+    <li><a href="/tags/推荐系统/">推荐系统</a><small>2</small></li>
+  
+    <li><a href="/tags/综述/">综述</a><small>1</small></li>
+  
+    <li><a href="/tags/自动文摘/">自动文摘</a><small>16</small></li>
+  
+    <li><a href="/tags/随笔/">随笔</a><small>4</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- rsarxiv -->
+<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-client="ca-pub-7417238904018690"
+     data-ad-slot="4681057960"
+     data-ad-format="auto"></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2017 PaperWeekly
+  
+</div>
+<div class="clearfix"></div>
+<!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+	<a class="jiathis_button_qzone"></a>
+	<a class="jiathis_button_tsina"></a>
+	<a class="jiathis_button_tqq"></a>
+	<a class="jiathis_button_weixin"></a>
+	<a class="jiathis_button_renren"></a>
+	<a class="jiathis_button_xiaoyou"></a>
+	<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+	<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END --></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+</body>
+</html>

@@ -1,0 +1,323 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>How to Generate a Good Word Embedding #PaperWeekly# | PaperWeekly</title>
+  
+  
+  <meta name="description" content="(欢迎大家订阅本博客，订阅地址是RSS)
+之前介绍过几种生成word embedding的方法，那么针对具体的任务该如何选择训练数据？如何选择采用哪个模型？如何选择模型参数？本篇将分享一篇paper来回答上述问题，paper的题目是How to Generate a Good Word Embedd">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="How to Generate a Good Word Embedding #PaperWeekly#"/>
+  <meta property="og:site_name" content="PaperWeekly"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="PaperWeekly" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+<script>
+	(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+		(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+			m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+	})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+	ga('create', 'UA-77933764-1', 'auto');
+	ga('send', 'pageview');
+
+</script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+
+</head>
+
+
+<body>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">PaperWeekly</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+      <li><a href="/atom.xml">Rss</a></li>
+    
+      <li><a href="/about/index.html">About</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2016-05-25T23:17:24.000Z"><a href="/2016/05/26/How-to-Generate-a-Good-Word-Embedding-PaperWeekly/">2016-05-26</a></time>
+      
+      
+  
+    <h1 class="title">How to Generate a Good Word Embedding #PaperWeekly#</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>(欢迎大家订阅本博客，订阅地址是<a href="http://rsarxiv.github.io/atom.xml">RSS</a>)</p>
+<p>之前介绍过几种生成word embedding的方法，那么针对具体的任务该如何选择训练数据？如何选择采用哪个模型？如何选择模型参数？本篇将分享一篇paper来回答上述问题，paper的题目是<a href="http://cn.arxiv.org/pdf/1507.05523.pdf" target="_blank" rel="external">How to Generate a Good Word Embedding</a>，作者是来自中科院大学的来斯惟博士。</p>
+<p>当前，word embedding的模型有很多，性能几乎都是各说纷纭，每个模型在自己选定的数据集和任务上都取得了state-of-the-art结果，导致学术研究和工程应用上难以做出选择。不仅仅在word embedding这个子方向上存在这样的问题，很多方向都有类似的问题，如何公平客观地评价不同的模型是一个很困难的任务。本文作者试着挑战了一下这个难题，并且给出了一些有意义的结果。</p>
+<p>本文所做研究都是一个同一个假设，即：出现在相似上下文的单词具有相似的意思。</p>
+<p>下面来看下不同模型的比较，不同word embedding模型之间主要的区别在于两点：</p>
+<p>1、目标词和上下文的关系</p>
+<p>2、上下文的表示方法</p>
+<p>本文提供探讨了6种模型，并从这两个方面对模型进行了对比，如下图：</p>
+<img src="/2016/05/26/How-to-Generate-a-Good-Word-Embedding-PaperWeekly/fig1.png" width="500" height="500">
+<p>c表示上下文，w表示目标词。首先看w和c的关系，前五种模型均是用c来预测w，只有C&amp;W模型是给w和c的组合来打分。再看c的表示方法，Order模型是本文为了对比增加的一个虚拟模型，考虑了词序信息，将c中每个单词拼接成一个大向量作为输入，而word2vec的两个模型skip-gram和cbow都是将上下文处理为一个相同维度的向量作为输入，其中skip-gram选择上下文中的一个词作为输入，cbow将上下文的几个词向量作了平均，LBL、NNLM和C&amp;W模型都是在Order模型的基础上加了一层隐藏层，将上下文向量做了一个语义组合。具体见下表：</p>
+<img src="/2016/05/26/How-to-Generate-a-Good-Word-Embedding-PaperWeekly/fig2.png" width="500" height="500">
+<p>据研究估计，文本含义信息的20%来自于词序，剩下的来自于词的选择。所以忽略词序信息的模型，将会损失约20%的信息。</p>
+<p>本文做了包括三种类型的八组对比实验，分别是：</p>
+<ul>
+<li><p>研究词向量的语义特性。该类实验是为了对比词向量的语义特性，包括：WordSim353，TOEFL，analogy task：semantic和syntactic。</p>
+</li>
+<li><p>将词向量作为特征。该类实验是为了对比词向量作为处理其他任务的特征时，对该任务性能的提升。包括：文本分类和命名实体识别。前者将词向量加权平均得到文本向量来分类，权值是词频，数据集用的是IMDB；后者用CoNLL03数据集做NER任务。</p>
+</li>
+<li><p>用词向量来初始化神经网络模型。该类实验是为了研究词向量作为神经网络的初始值，对NN模型的提升。包括：CNN文本分类和词性标注。前者用了我们之前提到过的Kim的CNN模型，将句子表示成矩阵作为CNN的输入得到句子的表示，进行情感分类，数据集是Stanford Sentiment Treebank；后者用Wall Street Journal数据集进行了POS tagging任务。</p>
+</li>
+</ul>
+<p>经过大量的对比实验，作者回答了以下几个问题：</p>
+<p>Q：哪个模型最好？如何选择c和w的关系以及c的表示方法？</p>
+<p>A：对于一个小型数据集来说，类似skip-gram这样越简单的模型效果越好，对于一个大型数据集来说，稍微复杂一点的模型，比如cbow和order就可以取得非常好的效果。真实数据中，skip-gram、cbow和order这样的模型足够了。在语义任务中，通过c来预测w的模型要更优于C&amp;W这种将c和w都放在输入层的模型。</p>
+<p>Q：数据集的规模和所属领域对词向量的效果有哪些影响？</p>
+<p>A：数据集的领域远比规模重要，给定一个任务之后，选择任务相关的领域数据将会提升性能，相反，如果数据并不相关，将会导致更差的性能。当然，如果数据都属于同一领域，规模越大性能越好。</p>
+<p>Q：在训练模型时迭代多少次可以有效地避免过拟合？</p>
+<p>A：通常的做法是在测试数据集上观察误差，当误差开始上升时即可停止训练，但经过本文的研究，这种方法并不能得到最好的task结果，好的做法是用task data作为early stopping的数据。</p>
+<p>Q：词向量的维度与效果之间的关系？</p>
+<p>A：越大的维度就会有越好的效果，但在一般的任务中50就已经足够了。</p>
+<p>本文作者做了大量的工作，针对当前词向量模型的方方面面问题进行了研究，并且给出了许多有意义的结果，对今后研究和使用词向量的童鞋们搭建了一个非常坚实的平台。并且在github上开源了<a href="https://github.com/licstar/compare" target="_blank" rel="external">实验结果</a>。</p>
+<p><b>工具推荐</b></p>
+<p><code>RSarXiv</code> <b>一个好用的arxiv cs paper推荐系统</b> <a href="http://rsarxiv.science/web" target="_blank" rel="external">网站地址</a> <b>ios App下载：App Store 搜索rsarxiv即可获得 </b></p>
+<p>PaperWeekly，每周会分享N篇nlp领域好玩的paper，旨在用最少的话说明白paper的贡献。</p>
+<img src="/2016/05/13/Paper翻译列表/qrcode.jpg" width="350" height="350">
+
+      
+    </div>
+    <footer>
+      
+        
+        
+  
+  <div class="tags">
+    <a href="/tags/nlp/">nlp</a>, <a href="/tags/PaperWeekly/">PaperWeekly</a>, <a href="/tags/word-embeddings/">word embeddings</a>
+  </div>
+
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+      <a class="addthis_button_pinterest_pinit" pi:pinit:layout="horizontal"></a>
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">留言</h1>
+
+  
+      <div id="fb-root"></div>
+<script>
+  (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=123456789012345";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
+</script>
+
+<div class="fb-comments" data-href="http://rsarxiv.github.io/2016/05/26/How-to-Generate-a-Good-Word-Embedding-PaperWeekly/index.html" data-num-posts="5" data-width="840" data-colorscheme="light"></div>
+      
+  
+</section>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜索">
+    <input type="hidden" name="q" value="site:rsarxiv.github.io">
+  </form>
+</div>
+
+  
+
+  
+<div class="widget tag">
+  <h3 class="title">标签</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/Autoencoder/">Autoencoder</a><small>1</small></li>
+  
+    <li><a href="/tags/CNN/">CNN</a><small>2</small></li>
+  
+    <li><a href="/tags/DQN/">DQN</a><small>4</small></li>
+  
+    <li><a href="/tags/Memory-Network/">Memory Network</a><small>1</small></li>
+  
+    <li><a href="/tags/NLP/">NLP</a><small>2</small></li>
+  
+    <li><a href="/tags/PaperWeekly/">PaperWeekly</a><small>110</small></li>
+  
+    <li><a href="/tags/RNN/">RNN</a><small>1</small></li>
+  
+    <li><a href="/tags/RNNLM/">RNNLM</a><small>1</small></li>
+  
+    <li><a href="/tags/ROUGE/">ROUGE</a><small>1</small></li>
+  
+    <li><a href="/tags/RSarXiv/">RSarXiv</a><small>1</small></li>
+  
+    <li><a href="/tags/Reading-Comprehension/">Reading Comprehension</a><small>6</small></li>
+  
+    <li><a href="/tags/Representation/">Representation</a><small>1</small></li>
+  
+    <li><a href="/tags/Text-Comprehension/">Text Comprehension</a><small>1</small></li>
+  
+    <li><a href="/tags/api-ai/">api.ai</a><small>1</small></li>
+  
+    <li><a href="/tags/arXiv/">arXiv</a><small>2</small></li>
+  
+    <li><a href="/tags/arxiv/">arxiv</a><small>2</small></li>
+  
+    <li><a href="/tags/attention/">attention</a><small>3</small></li>
+  
+    <li><a href="/tags/bot/">bot</a><small>21</small></li>
+  
+    <li><a href="/tags/chatbot/">chatbot</a><small>2</small></li>
+  
+    <li><a href="/tags/dataset/">dataset</a><small>1</small></li>
+  
+    <li><a href="/tags/deep-learning/">deep learning</a><small>1</small></li>
+  
+    <li><a href="/tags/deeplearning/">deeplearning</a><small>1</small></li>
+  
+    <li><a href="/tags/language-model/">language model</a><small>1</small></li>
+  
+    <li><a href="/tags/nlp/">nlp</a><small>128</small></li>
+  
+    <li><a href="/tags/open-source/">open source</a><small>1</small></li>
+  
+    <li><a href="/tags/paper/">paper</a><small>7</small></li>
+  
+    <li><a href="/tags/paperweekly/">paperweekly</a><small>2</small></li>
+  
+    <li><a href="/tags/reading-comprehension/">reading comprehension</a><small>1</small></li>
+  
+    <li><a href="/tags/reinforcement-learning/">reinforcement learning</a><small>1</small></li>
+  
+    <li><a href="/tags/sentence-representations/">sentence representations</a><small>1</small></li>
+  
+    <li><a href="/tags/seq2seq/">seq2seq</a><small>17</small></li>
+  
+    <li><a href="/tags/text-comprehension/">text comprehension</a><small>1</small></li>
+  
+    <li><a href="/tags/torch/">torch</a><small>1</small></li>
+  
+    <li><a href="/tags/word-embedding/">word embedding</a><small>2</small></li>
+  
+    <li><a href="/tags/word-embeddings/">word embeddings</a><small>1</small></li>
+  
+    <li><a href="/tags/word2vec/">word2vec</a><small>1</small></li>
+  
+    <li><a href="/tags/创业/">创业</a><small>1</small></li>
+  
+    <li><a href="/tags/招聘/">招聘</a><small>1</small></li>
+  
+    <li><a href="/tags/推荐系统/">推荐系统</a><small>2</small></li>
+  
+    <li><a href="/tags/综述/">综述</a><small>1</small></li>
+  
+    <li><a href="/tags/自动文摘/">自动文摘</a><small>16</small></li>
+  
+    <li><a href="/tags/随笔/">随笔</a><small>4</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- rsarxiv -->
+<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-client="ca-pub-7417238904018690"
+     data-ad-slot="4681057960"
+     data-ad-format="auto"></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2017 PaperWeekly
+  
+</div>
+<div class="clearfix"></div>
+<!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+	<a class="jiathis_button_qzone"></a>
+	<a class="jiathis_button_tsina"></a>
+	<a class="jiathis_button_tqq"></a>
+	<a class="jiathis_button_weixin"></a>
+	<a class="jiathis_button_renren"></a>
+	<a class="jiathis_button_xiaoyou"></a>
+	<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+	<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END --></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+</body>
+</html>

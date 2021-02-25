@@ -1,0 +1,341 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>自动文摘（九） | PaperWeekly</title>
+  
+  
+  <meta name="description" content="引
+坚持下去就是胜利。
+
+今天分享一篇关于构造自动文摘数据集的paper，数据集的质量、内容和规模都是直接影响deep learning效果的最直接因素，作用非常重要。题目是LCSTS: A Large Scale Chinese Short Text Summarization Dataset。
+">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="自动文摘（九）"/>
+  <meta property="og:site_name" content="PaperWeekly"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="PaperWeekly" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+<script>
+	(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+		(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+			m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+	})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+	ga('create', 'UA-77933764-1', 'auto');
+	ga('send', 'pageview');
+
+</script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+
+</head>
+
+
+<body>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">PaperWeekly</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+      <li><a href="/atom.xml">Rss</a></li>
+    
+      <li><a href="/about/index.html">About</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2016-05-10T23:14:52.000Z"><a href="/2016/05/11/自动文摘（九）/">2016-05-11</a></time>
+      
+      
+  
+    <h1 class="title">自动文摘（九）</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h1 id="引"><a href="#引" class="headerlink" title="引"></a>引</h1><blockquote>
+<p><strong>坚持下去就是胜利。</strong></p>
+</blockquote>
+<p>今天分享一篇关于构造自动文摘数据集的paper，数据集的质量、内容和规模都是直接影响deep learning效果的最直接因素，作用非常重要。题目是<b>LCSTS: A Large Scale Chinese Short Text Summarization Dataset</b>。</p>
+<p><code>本文最大的贡献在于构建了一个大规模、高质量中文短文本摘要数据集，弥补了这个空缺。并且在数据集的基础上用了最简单seq2seq给出了一个baseline，为后人的研究提供了基础。从本文的模型中可以看出，unk问题在文本摘要任务中的重要性，如何解决unk问题是提升摘要系统性能的一个重要方向。本文给出了一个思路，用character-based model来绕过这个问题，看过的paper中还有其他的解决思路，后面的博客将会专门介绍unk这个问题。</code></p>
+<h1 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h1><p>自动文本摘要是一个非常难的问题，部分原因是因为缺乏大规模的高质量数据集。本文将会介绍一个取自于新浪微博的大规模中文短文本摘要数据集，数据集中包含了200万真实的中文短文本数据和每个文本作者给出的摘要。同时我们也手动标注了10666份文本的摘要。基于本数据集，我们测试了用RNN来生成摘要得到了不错的效果，不仅仅亚验证了数据集的有效性，而且为今后的研究提供了基准。</p>
+<p><code>数据集一直都是困扰deep learning技术更好地应用在各大领域的一大瓶颈，尤其是中文数据集的匮乏，本文工作的意义在于给研究中文自动文摘的学者提供了数据支持。</code></p>
+<h1 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h1><img src="/2016/05/11/自动文摘（九）/weibo.png" width="500" height="500">
+<p>本文中的数据类似于上图中的形式。</p>
+<p>传统研究abstractive summarization的方法将摘要过程分类两步，第一步是使用无监督方法或者语言知识将关键文本提取出来；第二步是用语言规则或者文本生成技术将第一步的结果转述（<code>paraphrase</code>）。近期研究表明深度学习技术有很强地表示学习能力和语言生成能力，尤其是用GPU在大规模数据集上进行计算，许多学者将该技术应用在abstractive summarization任务中。</p>
+<p>然而，公开的高质量大规模文本摘要数据集还是少之又少，DUC、TAC、TREC的数据仅仅包括几百条英文人工摘要数据，这种情况在中文环境中更加糟糕。所以本文构建了一个大规模中文短文本摘要数据集。</p>
+<p>以下是本文的贡献：</p>
+<p>1、构建了目前最大的一个中文短文本摘要数据集。</p>
+<p>2、提供了数据集分割的标准方法。</p>
+<p>3、研究了数据集的特性，采样10666条样本，并进行数据集的质量评价。</p>
+<p>4、利用了基于encoder-decoder rnn技术来生成摘要，作为该任务的基准。</p>
+<p><code>大规模数据集的构建往往来自于网络爬虫，获取到了大量的raw data之后，如何处理得到高质量的内容是关键。本文通过抽样选出样本对数据集质量进行评价，并且用当下最流行的seq2seq技术给出了本数据集的benchmark，以供后人研究超越。</code></p>
+<h1 id="Data-Collection"><a href="#Data-Collection" class="headerlink" title="Data Collection"></a>Data Collection</h1><p>为了保证质量，我们仅抓取通过认证组织的微博，这些微博更加清楚、规范和有信息。流程具体如下图：</p>
+<img src="/2016/05/11/自动文摘（九）/arch.png" width="500" height="500">
+<p>1、首先收集50个流行的官方组织用户作为种子。分别来自政治、经济、军事、电影、游戏等领域，比如人民日报。</p>
+<p>2、然后从种子用户中抓取他们关注的用户，并且将不是大V，且粉丝少于100万的用户过滤掉。</p>
+<p>3、然后抓取候选用户的微博内容。</p>
+<p>4、最后通过过滤，清洗，提取等工作得到最后的数据集。</p>
+<p><code>这个环节涉及到的技术是爬虫技术，整体的思路比较简单，先选择一些高质量的用户作为起点，从他们关注的用户中过滤出类似的大V用户，然后再爬取所有候选用户的微博内容，清洗、过滤和提取有效数据。</code></p>
+<h1 id="Data-Properties"><a href="#Data-Properties" class="headerlink" title="Data Properties"></a>Data Properties</h1><p>数据集主要分为三个部分，如下表：</p>
+<img src="/2016/05/11/自动文摘（九）/table.png" width="500" height="500">
+<p>1、第一部分是本数据集的主要部分，包含了2400591对（短文本，摘要），这部分数据用来训练生成摘要的模型。</p>
+<p>2、第二部分包括了10666对人工标注的（短文本，摘要），每个样本都打了1-5分，分数是用来评判短文本与摘要的相关程度，1代表最不相关，5代表最相关。这部分数据是从第一部分数据中随机采样出来的，用来分析第一部分数据的分布情况。其中，标注为3、4、5分的样本原文与摘要相关性更好一些，从中也可以看出很多摘要中会包含一些没有出现在原文中的词，这也说明与句子压缩任务不同。标注为1、2分的相关性差一些，更像是标题或者是评论而不是摘要。统计表明，1、2分的数据少于两成，可以用监督学习的方法过滤掉。</p>
+<p>3、第三部分包括了1106对，三个人对2000对进行了评判，这里的数据独立于第一部分和第二部分。选择3分以上的数据作为短文本摘要任务的测试数据集。</p>
+<p><code>数据集的构造是一个非常大的工作，因为涉及到大量的人工标注工作，如何保证所用的训练集、测试集都有很高的质量是一个问题。本文对第一部分的数据做了采样分析，用第二部分数据作为训练高质量数据的样本，提取出了更高质量的训练集，第三部分提供了测试集。到此，数据集比较完整了。</code></p>
+<h1 id="Experiment"><a href="#Experiment" class="headerlink" title="Experiment"></a>Experiment</h1><p>本文用了当下流行的seq2seq技术来做验证实验，用第一部分的数据作为训练集，第三部分的3分以上数据作为测试集。一共用了两种方法来处理数据：</p>
+<p>1、基于汉字的方法(character-based)，将词汇表降维到了4000。</p>
+<p>2、基于词的方法（word-based），本文用jieba做分词，词汇表维度为50000。</p>
+<p>两种网络架构：</p>
+<p>1、RNN作为Encoder，用最后一个hidden state作为Decoder的输入。</p>
+<img src="/2016/05/11/自动文摘（九）/fig1.png" width="500" height="500">
+<p>2、Encoder中的所有hidden state的组合作为Decoder的输入。</p>
+<img src="/2016/05/11/自动文摘（九）/fig2.png" width="500" height="500">
+<p>RNN隐藏层用GRU，生成摘要时用beam search，beam size设置为10。对比结果如下：</p>
+<img src="/2016/05/11/自动文摘（九）/result.png" width="500" height="500">
+<p>评测方法采用ROUGE-1，ROUGE-2，ROUGE-L，由于标准的ROUGE包是用来评测英文的，所以这里将中文汉字转换成id。结果中基于汉字的RNN context模型有更好的效果。简单分析下原因，基于词的模型由于词汇表的限制，非常容易遇到unknown words，而基于字则不同，可以轻松解决unk的问题。</p>
+<p><code>本文的两种模型搭配两种网络架构，涵盖了简单的seq2seq和seq2seq+attention，很明显地可以看到基于字的模型效果更加好，因为成功地避免了unk的问题。最近有的文章在解决unk的问题，比如用了Pointer/Copy Mechanism来解决。下一次要好好总结一下unk问题的解决方案和ROUGE评测方法。</code></p>
+<h1 id="Conclusion-and-Future-Work"><a href="#Conclusion-and-Future-Work" class="headerlink" title="Conclusion and Future Work"></a>Conclusion and Future Work</h1><p>未来工作：</p>
+<p>1、多层次RNN。</p>
+<p>2、unk的改进。</p>
+<p><code>本文的数据集中输入部分并非只有一句话，而是一段话，简单的rnn并不能准确捕捉其意思。unk是一个很棘手的问题，接下来的博客会单独介绍unk的问题。</code></p>
+<h1 id="Link"><a href="#Link" class="headerlink" title="Link"></a>Link</h1><p>[1] <a href="http://cn.arxiv.org/pdf/1506.05865" target="_blank" rel="external">LCSTS: A Large Scale Chinese Short Text Summarization Dataset</a></p>
+<h1 id="工具推荐"><a href="#工具推荐" class="headerlink" title="工具推荐"></a>工具推荐</h1><p><code>RSarXiv</code> <b>一个好用的arxiv cs paper推荐系统</b> <a href="http://rsarxiv.science/web" target="_blank" rel="external">网站地址</a> <b>ios App下载：App Store 搜索rsarxiv即可获得 </b></p>
+<p>PaperWeekly，每周会分享N篇nlp领域好玩的paper，旨在用最少的话说明白paper的贡献，欢迎大家扫码关注。</p>
+<img src="/2016/05/13/Paper翻译列表/qrcode.jpg" width="650" height="650">
+
+      
+    </div>
+    <footer>
+      
+        
+        
+  
+  <div class="tags">
+    <a href="/tags/nlp/">nlp</a>, <a href="/tags/seq2seq/">seq2seq</a>, <a href="/tags/自动文摘/">自动文摘</a>, <a href="/tags/paper/">paper</a>, <a href="/tags/dataset/">dataset</a>
+  </div>
+
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+      <a class="addthis_button_pinterest_pinit" pi:pinit:layout="horizontal"></a>
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">留言</h1>
+
+  
+      <div id="fb-root"></div>
+<script>
+  (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=123456789012345";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
+</script>
+
+<div class="fb-comments" data-href="http://rsarxiv.github.io/2016/05/11/自动文摘（九）/index.html" data-num-posts="5" data-width="840" data-colorscheme="light"></div>
+      
+  
+</section>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜索">
+    <input type="hidden" name="q" value="site:rsarxiv.github.io">
+  </form>
+</div>
+
+  
+
+  
+<div class="widget tag">
+  <h3 class="title">标签</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/Autoencoder/">Autoencoder</a><small>1</small></li>
+  
+    <li><a href="/tags/CNN/">CNN</a><small>2</small></li>
+  
+    <li><a href="/tags/DQN/">DQN</a><small>4</small></li>
+  
+    <li><a href="/tags/Memory-Network/">Memory Network</a><small>1</small></li>
+  
+    <li><a href="/tags/NLP/">NLP</a><small>2</small></li>
+  
+    <li><a href="/tags/PaperWeekly/">PaperWeekly</a><small>110</small></li>
+  
+    <li><a href="/tags/RNN/">RNN</a><small>1</small></li>
+  
+    <li><a href="/tags/RNNLM/">RNNLM</a><small>1</small></li>
+  
+    <li><a href="/tags/ROUGE/">ROUGE</a><small>1</small></li>
+  
+    <li><a href="/tags/RSarXiv/">RSarXiv</a><small>1</small></li>
+  
+    <li><a href="/tags/Reading-Comprehension/">Reading Comprehension</a><small>6</small></li>
+  
+    <li><a href="/tags/Representation/">Representation</a><small>1</small></li>
+  
+    <li><a href="/tags/Text-Comprehension/">Text Comprehension</a><small>1</small></li>
+  
+    <li><a href="/tags/api-ai/">api.ai</a><small>1</small></li>
+  
+    <li><a href="/tags/arXiv/">arXiv</a><small>2</small></li>
+  
+    <li><a href="/tags/arxiv/">arxiv</a><small>2</small></li>
+  
+    <li><a href="/tags/attention/">attention</a><small>3</small></li>
+  
+    <li><a href="/tags/bot/">bot</a><small>21</small></li>
+  
+    <li><a href="/tags/chatbot/">chatbot</a><small>2</small></li>
+  
+    <li><a href="/tags/dataset/">dataset</a><small>1</small></li>
+  
+    <li><a href="/tags/deep-learning/">deep learning</a><small>1</small></li>
+  
+    <li><a href="/tags/deeplearning/">deeplearning</a><small>1</small></li>
+  
+    <li><a href="/tags/language-model/">language model</a><small>1</small></li>
+  
+    <li><a href="/tags/nlp/">nlp</a><small>128</small></li>
+  
+    <li><a href="/tags/open-source/">open source</a><small>1</small></li>
+  
+    <li><a href="/tags/paper/">paper</a><small>7</small></li>
+  
+    <li><a href="/tags/paperweekly/">paperweekly</a><small>2</small></li>
+  
+    <li><a href="/tags/reading-comprehension/">reading comprehension</a><small>1</small></li>
+  
+    <li><a href="/tags/reinforcement-learning/">reinforcement learning</a><small>1</small></li>
+  
+    <li><a href="/tags/sentence-representations/">sentence representations</a><small>1</small></li>
+  
+    <li><a href="/tags/seq2seq/">seq2seq</a><small>17</small></li>
+  
+    <li><a href="/tags/text-comprehension/">text comprehension</a><small>1</small></li>
+  
+    <li><a href="/tags/torch/">torch</a><small>1</small></li>
+  
+    <li><a href="/tags/word-embedding/">word embedding</a><small>2</small></li>
+  
+    <li><a href="/tags/word-embeddings/">word embeddings</a><small>1</small></li>
+  
+    <li><a href="/tags/word2vec/">word2vec</a><small>1</small></li>
+  
+    <li><a href="/tags/创业/">创业</a><small>1</small></li>
+  
+    <li><a href="/tags/招聘/">招聘</a><small>1</small></li>
+  
+    <li><a href="/tags/推荐系统/">推荐系统</a><small>2</small></li>
+  
+    <li><a href="/tags/综述/">综述</a><small>1</small></li>
+  
+    <li><a href="/tags/自动文摘/">自动文摘</a><small>16</small></li>
+  
+    <li><a href="/tags/随笔/">随笔</a><small>4</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- rsarxiv -->
+<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-client="ca-pub-7417238904018690"
+     data-ad-slot="4681057960"
+     data-ad-format="auto"></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2017 PaperWeekly
+  
+</div>
+<div class="clearfix"></div>
+<!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+	<a class="jiathis_button_qzone"></a>
+	<a class="jiathis_button_tsina"></a>
+	<a class="jiathis_button_tqq"></a>
+	<a class="jiathis_button_weixin"></a>
+	<a class="jiathis_button_renren"></a>
+	<a class="jiathis_button_xiaoyou"></a>
+	<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+	<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END --></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+</body>
+</html>
